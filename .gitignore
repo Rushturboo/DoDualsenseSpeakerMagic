@@ -1,41 +1,76 @@
-# Prerequisites
-*.d
+# ===============================================
+# Unreal Engine Plugin .gitignore
+# ===============================================
 
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
+# OS / Editor specific
+.DS_Store
+Thumbs.db
 
-# Precompiled Headers
-*.gch
-*.pch
+# Visual Studio / Rider
+.vs/
+.idea/
+.vscode/
+*.sln
+*.suo
+*.user
+*.userprefs
+*.VC.db
+*.VC.opendb
 
-# Linker files
-*.ilk
+# Build / Cache folders
+Binaries/
+Intermediate/
+DerivedDataCache/
+Saved/
+Build/
+Builds/
+Script/
+*.sdf
+*.opensdf
+*.tlog
 
-# Debugger Files
-*.pdb
+# Unreal Engine autosaves / backups
+*.autosave
+*.bak
+*.backup
 
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
+# Unreal temporary files
+*_BuiltData.uasset
+*_BuiltData.uexp
+*.generated.*
+*.gen.cpp
+*.gen.h
 
-# Fortran module files
-*.mod
-*.smod
+# Logs
+*.log
+*.tlog
 
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
+# Temporary cooked data
+Cooked/
 
-# Executables
-*.exe
-*.out
-*.app
+# Crash reports
+Saved/Crashes/
 
-# debug information files
-*.dwo
+# Unreal Engine Plugin Packaging
+*.tmp
+*.zip
+*.pak
+
+# Ignore user-specific files
+*.ini
+!Config/Default*.ini
+
+# Ignore other IDEs’ metadata
+*.iml
+*.ipr
+*.iws
+
+# ===============================================
+# Keep source and config folders
+# ===============================================
+!Source/
+!Content/
+!Resources/
+!Config/
+!README.md
+!LICENSE
