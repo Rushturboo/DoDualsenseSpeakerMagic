@@ -1,3 +1,5 @@
+// Copyright Epic Games, Inc. All Rights Reserved.
+
 #include "E:\Unreal_Project\UE5FPS\Intermediate\Build\Win64\x64\UE5FPSEditor\Development\UnrealEd\SharedPCH.UnrealEd.Project.ValApi.ValExpApi.Cpp20.h"
 #if WITH_WASAPI
 #include "WindowsWASAPIRenderer.h"
@@ -14,6 +16,8 @@
 #include <Propsys.h>
 #include <Audioclient.h>
 #include <combaseapi.h>
+#include <thread>
+#include <chrono>
 
 
 #pragma comment(lib, "Avrt.lib")
@@ -120,21 +124,47 @@ struct FPlaybackTask : public FRunnable
 
         while (pos < totalBytes && !bStop)
         {
-            UINT32 padding = 0; audioClient->GetCurrentPadding(&padding);
+            UINT32 padding = 0;
+            if (FAILED(audioClient->GetCurrentPadding(&padding)))
+                break;
+
             UINT32 framesAvailable = bufferFrameCount - padding;
-            if (framesAvailable == 0) { FPlatformProcess::Sleep(0.005f); continue; }
 
-            if (renderClient->GetBuffer(framesAvailable, &pData) != S_OK) break;
+            if (framesAvailable > 0)
+            {
+                pData = nullptr;
+                if (FAILED(renderClient->GetBuffer(framesAvailable, &pData)))
+                    break;
 
-            int64 bytesWanted = (int64)framesAvailable * waveFormat.nBlockAlign;
-            int64 bytesToCopy = FMath::Min(bytesWanted, totalBytes - pos);
-            FMemory::Memzero(pData, bytesWanted);
-            FMemory::Memcpy(pData, Wav.Data.GetData() + pos, bytesToCopy);
-            pos += bytesToCopy;
+                int64 bytesWanted = (int64)framesAvailable * waveFormat.nBlockAlign;
+                int64 bytesToCopy = FMath::Min(bytesWanted, totalBytes - pos);
 
-            renderClient->ReleaseBuffer(framesAvailable, 0);
+                // 写入数据
+                FMemory::Memcpy(pData, Wav.Data.GetData() + pos, bytesToCopy);
+                pos += bytesToCopy;
+
+                // 若最后一帧不满则补0防止残音
+                if (bytesToCopy < bytesWanted)
+                    FMemory::Memzero(pData + bytesToCopy, bytesWanted - bytesToCopy);
+
+                renderClient->ReleaseBuffer(framesAvailable, 0);
+            }
+
+            // 睡眠时间略调大，留给扬声器缓冲
+            FPlatformProcess::Sleep(Wav.Data.Num() / (float)Wav.SampleRate / 4.0f);
+
         }
 
+        // 播放完毕后，继续播放一段静音，保证尾声完整播放
+        UINT32 finalPadding = 0;
+        audioClient->GetCurrentPadding(&finalPadding);
+        if (finalPadding > 0)
+        {
+            // 多等几百毫秒以保证缓冲区完全清空
+            FPlatformProcess::Sleep(0.5f);
+        }
+
+        // 最后调用 Stop
         audioClient->Stop();
         renderClient->Release();
         audioClient->Release();
